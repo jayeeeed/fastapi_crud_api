@@ -30,7 +30,7 @@ def create_item(item: schemas.ItemCreate, db: Session = Depends(get_db)):
 
 
 @app.get("/items/", response_model=list[schemas.Item])
-def read_items(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+def read_items(skip: int = 0, limit: int = 20, db: Session = Depends(get_db)):
     return db.query(models.Item).offset(skip).limit(limit).all()
 
 
