@@ -1,9 +1,10 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 import uuid
 
 
 class ItemBase(BaseModel):
+    id: str = Field(..., description="Item ID is required")
     name: str = Field(..., description="Item name is required")
     price: int = Field(..., description="Item price is required")
 
@@ -13,23 +14,18 @@ class ItemCreate(BaseModel):
     name: str = Field(..., description="Item name is required")
     price: int = Field(..., description="Item price is required")
     
-    @validator('id', pre=True, always=True)
+    @field_validator('id', mode='before')
+    @classmethod
     def generate_id_if_missing(cls, v):
         if v is None or v == "":
             return str(uuid.uuid4())
         return v
 
 
-class ItemUpdate(BaseModel):
-    id: str = Field(..., description="Item ID is required for updates")
-    name: str = Field(..., description="Item name is required")
-    price: int = Field(..., description="Item price is required")
+class ItemUpdate(ItemBase):
+    pass
 
 
-class Item(BaseModel):
-    id: str = Field(..., description="Item ID")
-    name: str = Field(..., description="Item name")
-    price: int = Field(..., description="Item price")
-
+class Item(ItemBase):
     class Config:
         from_attributes = True
