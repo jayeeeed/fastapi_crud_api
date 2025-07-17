@@ -25,8 +25,6 @@ app = FastAPI(lifespan=lifespan)
 
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
-
 
 def get_db():
     db = SessionLocal()
@@ -43,7 +41,8 @@ def health_check():
 
 @app.post("/items/", response_model=schemas.Item)
 def create_item(item: schemas.ItemCreate, db: Session = Depends(get_db)):
-    item_id = item.id if item.id else str(uuid.uuid4())
+    # Generate UUID if not provided
+    item_id = uuid.UUID(item.id) if item.id else uuid.uuid4()
     db_item = models.Item(id=item_id, name=item.name, price=item.price)
     db.add(db_item)
     db.commit()
@@ -57,16 +56,26 @@ def read_items(skip: int = 0, limit: int = 20, db: Session = Depends(get_db)):
 
 
 @app.get("/items/{item_id}", response_model=schemas.Item)
-def read_item(item_id: int, db: Session = Depends(get_db)):
-    item = db.query(models.Item).filter(models.Item.id == item_id).first()
+def read_item(item_id: str, db: Session = Depends(get_db)):
+    try:
+        uuid_id = uuid.UUID(item_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid UUID format")
+
+    item = db.query(models.Item).filter(models.Item.id == uuid_id).first()
     if item is None:
         raise HTTPException(status_code=404, detail="Item not found")
     return item
 
 
 @app.put("/items/{item_id}", response_model=schemas.Item)
-def update_item(item_id: int, item: schemas.ItemUpdate, db: Session = Depends(get_db)):
-    db_item = db.query(models.Item).filter(models.Item.id == item_id).first()
+def update_item(item_id: str, item: schemas.ItemUpdate, db: Session = Depends(get_db)):
+    try:
+        uuid_id = uuid.UUID(item_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid UUID format")
+
+    db_item = db.query(models.Item).filter(models.Item.id == uuid_id).first()
     if db_item is None:
         raise HTTPException(status_code=404, detail="Item not found")
     db_item.name = item.name
@@ -77,8 +86,13 @@ def update_item(item_id: int, item: schemas.ItemUpdate, db: Session = Depends(ge
 
 
 @app.patch("/items/{item_id}", response_model=schemas.Item)
-def patch_item(item_id: int, item: schemas.ItemUpdate, db: Session = Depends(get_db)):
-    db_item = db.query(models.Item).filter(models.Item.id == item_id).first()
+def patch_item(item_id: str, item: schemas.ItemUpdate, db: Session = Depends(get_db)):
+    try:
+        uuid_id = uuid.UUID(item_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid UUID format")
+
+    db_item = db.query(models.Item).filter(models.Item.id == uuid_id).first()
     if db_item is None:
         raise HTTPException(status_code=404, detail="Item not found")
     if item.name is not None:
@@ -91,8 +105,13 @@ def patch_item(item_id: int, item: schemas.ItemUpdate, db: Session = Depends(get
 
 
 @app.delete("/items/{item_id}")
-def delete_item(item_id: int, db: Session = Depends(get_db)):
-    db_item = db.query(models.Item).filter(models.Item.id == item_id).first()
+def delete_item(item_id: str, db: Session = Depends(get_db)):
+    try:
+        uuid_id = uuid.UUID(item_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid UUID format")
+
+    db_item = db.query(models.Item).filter(models.Item.id == uuid_id).first()
     if db_item is None:
         raise HTTPException(status_code=404, detail="Item not found")
     db.delete(db_item)
