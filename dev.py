@@ -5,6 +5,7 @@ from database import SessionLocal, engine
 import os
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
+from pyngrok import ngrok
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -85,6 +86,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+custom_domain = os.getenv("NGROK_URL", "rational-bison-kind.ngrok-free.app")
+public_url = ngrok.connect(addr=8000, url=custom_domain)
+
+print(f"Public URL: {public_url}")
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
