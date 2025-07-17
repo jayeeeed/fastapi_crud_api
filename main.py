@@ -35,6 +35,11 @@ def get_db():
         db.close()
 
 
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
+
 @app.post("/items/", response_model=schemas.Item)
 def create_item(item: schemas.ItemCreate, db: Session = Depends(get_db)):
     db_item = models.Item(name=item.name, price=item.price)
