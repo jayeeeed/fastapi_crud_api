@@ -5,6 +5,22 @@ from database import SessionLocal, engine
 import os
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+from health import health_start, health_stop
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup logic
+    health_start()
+    yield
+
+    # Shutdown logic
+    health_stop()
+
+
+app = FastAPI(lifespan=lifespan)
 
 models.Base.metadata.create_all(bind=engine)
 
