@@ -1,7 +1,9 @@
 from pydantic import BaseModel
+from typing import Optional
 
 
 class ItemBase(BaseModel):
+    id: str
     name: str
     price: int
 
@@ -11,12 +13,9 @@ class ItemCreate(ItemBase):
 
 
 class ItemUpdate(ItemBase):
-    name: str | None = None
-    price: int | None = None
+    pass
 
 
 class Item(ItemBase):
-    id: int
-
     class Config:
         from_attributes = True

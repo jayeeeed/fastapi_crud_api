@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 import models, schemas
 from database import SessionLocal, engine
 import os
+import uuid
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.cors import CORSMiddleware
@@ -42,7 +43,8 @@ def health_check():
 
 @app.post("/items/", response_model=schemas.Item)
 def create_item(item: schemas.ItemCreate, db: Session = Depends(get_db)):
-    db_item = models.Item(name=item.name, price=item.price)
+    item_id = item.id if item.id else str(uuid.uuid4())
+    db_item = models.Item(id=item_id, name=item.name, price=item.price)
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
