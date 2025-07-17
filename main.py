@@ -41,8 +41,12 @@ def health_check():
 
 @app.post("/items/", response_model=schemas.Item)
 def create_item(item: schemas.ItemCreate, db: Session = Depends(get_db)):
-    # Generate UUID if not provided
-    item_id = uuid.UUID(item.id) if item.id else uuid.uuid4()
+    # UUID is now generated in schema validation if not provided
+    try:
+        item_id = uuid.UUID(item.id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid UUID format")
+    
     db_item = models.Item(id=item_id, name=item.name, price=item.price)
     db.add(db_item)
     db.commit()
