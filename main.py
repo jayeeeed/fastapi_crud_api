@@ -41,7 +41,9 @@ def health_check():
 
 @app.post("/items/", response_model=schemas.Item)
 def create_item(item: schemas.ItemCreate, db: Session = Depends(get_db)):
-    db_item = models.Item(id=item.id, name=item.name, price=item.price)
+    db_item = models.Item(
+        id=item.id, user_id=item.user_id, name=item.name, price=item.price
+    )
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
@@ -49,8 +51,13 @@ def create_item(item: schemas.ItemCreate, db: Session = Depends(get_db)):
 
 
 @app.get("/items/", response_model=list[schemas.Item])
-def read_items(skip: int = 0, limit: int = 20, db: Session = Depends(get_db)):
-    return db.query(models.Item).offset(skip).limit(limit).all()
+def read_items(
+    skip: int = 0, limit: int = 20, user_id: str = None, db: Session = Depends(get_db)
+):
+    query = db.query(models.Item)
+    if user_id:
+        query = query.filter(models.Item.user_id == user_id)
+    return query.offset(skip).limit(limit).all()
 
 
 @app.get("/items/{item_id}", response_model=schemas.Item)
@@ -67,6 +74,7 @@ def update_item(item_id: str, item: schemas.ItemUpdate, db: Session = Depends(ge
     if db_item is None:
         raise HTTPException(status_code=404, detail="Item not found")
     db_item.id = item.id
+    db_item.user_id = item.user_id
     db_item.name = item.name
     db_item.price = item.price
     db.commit()
@@ -80,6 +88,7 @@ def patch_item(item_id: str, item: schemas.ItemUpdate, db: Session = Depends(get
     if db_item is None:
         raise HTTPException(status_code=404, detail="Item not found")
     db_item.id = item.id
+    db_item.user_id = item.user_id
     db_item.name = item.name
     db_item.price = item.price
     db.commit()
