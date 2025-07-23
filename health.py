@@ -6,7 +6,7 @@ scheduler = BackgroundScheduler()
 
 
 def ping_health_check():
-    url = "https://crud-fastapi-levg.onrender.com/health"
+    url = "https://crud-fastapi-levg.onrender.com/"
     try:
         response = httpx.get(url)
         print(f"Health check status: {response.status_code}")
