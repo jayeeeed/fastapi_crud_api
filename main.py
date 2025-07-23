@@ -1,11 +1,13 @@
 from fastapi import FastAPI, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import OperationalError, DisconnectionError
 import models, schemas
 from database import SessionLocal, engine
 import os
 import uuid
 import uvicorn
 import logging
+import time
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -34,11 +36,38 @@ models.Base.metadata.create_all(bind=engine)
 
 
 def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    max_retries = 3
+    retry_delay = 1
+
+    for attempt in range(max_retries):
+        try:
+            db = SessionLocal()
+            # Test the connection
+            db.execute("SELECT 1")
+            yield db
+            return
+        except (OperationalError, DisconnectionError) as e:
+            logger.warning(
+                f"Database connection attempt {attempt + 1} failed: {str(e)}"
+            )
+            if db:
+                db.close()
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+            else:
+                logger.error("All database connection attempts failed")
+                raise HTTPException(
+                    status_code=503, detail="Database connection failed"
+                )
+        except Exception as e:
+            if db:
+                db.close()
+            logger.error(f"Unexpected database error: {str(e)}")
+            raise HTTPException(status_code=500, detail="Database error")
+        finally:
+            if "db" in locals():
+                db.close()
 
 
 @app.get("/")
