@@ -107,21 +107,33 @@ def update_item(item_id: str, item: schemas.ItemUpdate, db: Session = Depends(ge
 
 
 @app.patch("/items/{item_id}", response_model=schemas.Item)
-def patch_item(item_id: str, item: schemas.ItemUpdate, db: Session = Depends(get_db)):
+def patch_item(item_id: str, item: schemas.ItemPatch, db: Session = Depends(get_db)):
+    # Log only the provided fields
+    provided_fields = {k: v for k, v in item.dict().items() if v is not None}
     logger.info(
-        f"PATCH /items/{item_id} - Path param: item_id={item_id}, Body params: id={item.id}, user_id={item.user_id}, name={item.name}, price={item.price}"
+        f"PATCH /items/{item_id} - Path param: item_id={item_id}, Body params: {provided_fields}"
     )
+
     db_item = db.query(models.Item).filter(models.Item.id == item_id).first()
     if db_item is None:
         logger.warning(f"PATCH /items/{item_id} - Item not found")
         raise HTTPException(status_code=404, detail="Item not found")
-    db_item.id = item.id
-    db_item.user_id = item.user_id
-    db_item.name = item.name
-    db_item.price = item.price
+
+    # Only update fields that are provided (not None)
+    if item.id is not None:
+        db_item.id = item.id
+    if item.user_id is not None:
+        db_item.user_id = item.user_id
+    if item.name is not None:
+        db_item.name = item.name
+    if item.price is not None:
+        db_item.price = item.price
+
     db.commit()
     db.refresh(db_item)
-    logger.info(f"PATCH /items/{item_id} - Successfully patched item")
+    logger.info(
+        f"PATCH /items/{item_id} - Successfully patched item with fields: {list(provided_fields.keys())}"
+    )
     return db_item
 
 

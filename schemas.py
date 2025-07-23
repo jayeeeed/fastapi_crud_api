@@ -30,6 +30,13 @@ class ItemUpdate(ItemBase):
     pass
 
 
+class ItemPatch(BaseModel):
+    id: Optional[str] = Field(None, description="Item ID (optional for patch)")
+    user_id: Optional[str] = Field(None, description="User ID (optional for patch)")
+    name: Optional[str] = Field(None, description="Item name (optional for patch)")
+    price: Optional[int] = Field(None, description="Item price (optional for patch)")
+
+
 class Item(ItemBase):
     class Config:
         from_attributes = True
