@@ -2,3 +2,4 @@
 __pycache__
 items.db
 test.py
+.env
